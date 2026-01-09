@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roundism MedTracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f2f4f8;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            background-attachment: fixed;
+            color: #1a1a1a;
+            min-height: 100vh;
+            padding-bottom: 100px;
+        }
+
+        /* Glassmorphism Classes */
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        .glass-dark {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        /* Roundism Checkbox */
+        .round-check {
+            appearance: none;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            border: 2px solid #cbd5e1;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            cursor: pointer;
+            background-color: white;
+        }
+
+        .round-check:checked {
+            background-color: #10b981; /* Emerald 500 */
+            border-color: #10b981;
+            transform: scale(1.1);
+        }
+
+        .round-check:checked::after {
+            content: '✓';
+            position: absolute;
+            color: white;
+            font-size: 1.2rem;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Animations */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+        
+        .card-enter {
+            animation: slideUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        @keyframes slideUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="selection:bg-indigo-500 selection:text-white">
+
+    <div class="max-w-2xl mx-auto px-4 py-8">
+        
+        <header class="text-center mb-10 text-white">
+            <h1 class="text-4xl font-extrabold tracking-tight mb-2">Daily Meds</h1>
+            <p class="opacity-80 text-lg font-medium">Stay healthy, stay consistent.</p>
+            <div id="date-display" class="mt-4 inline-block glass-dark px-6 py-2 rounded-full text-sm font-semibold tracking-wide">
+                </div>
+        </header>
+
+        <div id="sos-section" class="mb-10 card-enter" style="animation-delay: 0.1s;">
+            <div class="glass border-l-8 border-l-red-500 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+                <div class="absolute -right-6 -top-6 bg-red-100 w-24 h-24 rounded-full opacity-50 blur-2xl"></div>
+                <div class="flex items-center gap-4">
+                    <div class="w-20 h-20 shrink-0 rounded-2xl bg-white p-2 shadow-inner flex items-center justify-center">
+                        <img src="Angised_resized.png" alt="Angised" class="w-full h-full object-contain">
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <h2 class="text-2xl font-bold text-gray-800">Angised 0.5mg</h2>
+                            <span class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">SOS</span>
+                        </div>
+                        <p class="text-gray-600 font-medium">When chest pain occurs • Place under tongue</p>
+                        <p class="text-xs text-gray-500 mt-2 bg-white/50 inline-block px-3 py-1 rounded-full border border-gray-200">
+                            Duration: 10 Days Supply
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section id="morning-section" class="mb-12">
+            <div class="flex items-center gap-3 mb-6 px-2">
+                <div class="p-2 bg-orange-100 rounded-full text-orange-600">
+                    <i data-lucide="sun" class="w-6 h-6"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-white">Morning Routine</h2>
+                <span class="text-white/60 text-sm font-medium ml-auto">After Breakfast/Food</span>
+            </div>
+            <div class="space-y-4" id="morning-list">
+                </div>
+        </section>
+
+        <section id="night-section" class="mb-20">
+            <div class="flex items-center gap-3 mb-6 px-2">
+                <div class="p-2 bg-indigo-100 rounded-full text-indigo-600">
+                    <i data-lucide="moon" class="w-6 h-6"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-white">Night Routine</h2>
+                <span class="text-white/60 text-sm font-medium ml-auto">After Dinner/Food</span>
+            </div>
+            <div class="space-y-4" id="night-list">
+                </div>
+        </section>
+
+    </div>
+
+    <div id="completion-modal" class="fixed inset-0 z-50 flex items-center justify-center px-4 hidden">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal()"></div>
+        <div class="bg-white rounded-[2rem] p-8 max-w-sm w-full relative z-10 text-center shadow-2xl animate-float">
+            <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="check-circle-2" class="w-10 h-10"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-2">Course Completed!</h3>
+            <p class="text-gray-600 mb-6" id="modal-text">You have finished the 30-day course for this medication.</p>
+            <button onclick="closeModal()" class="w-full bg-gray-900 text-white py-4 rounded-2xl font-bold text-lg hover:scale-[1.02] transition-transform">
+                Awesome
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- Configuration ---
+        const MEDICINES = [
+            { id: 'anplag', name: 'Anplag 90mg', image: 'Anplag_resized.webp', daysTotal: 30, schedule: ['morning', 'night'], instruction: 'After Food' },
+            { id: 'rolip', name: 'RolipEze 20/10mg', image: 'RolipEze_resized.webp', daysTotal: 30, schedule: ['night'], instruction: 'After Dinner' },
+            { id: 'loprin', name: 'Loprin 75mg', image: 'Loprin_resized.webp', daysTotal: 30, schedule: ['morning'], instruction: 'After Breakfast' },
+            { id: 'lasix', name: 'Lasix 40mg', image: 'Lasix 40mg_resized.webp', daysTotal: 10, schedule: ['morning'], instruction: 'After Breakfast' },
+            { id: 'dapa', name: 'Dapa-Met XR', image: 'DapaMet XR_resized.jpg', daysTotal: 30, schedule: ['morning', 'night'], instruction: 'After Food' },
+            { id: 'carsel', name: 'Carsel 25mg', image: 'Carsel 25mg_resized.webp', daysTotal: 30, schedule: ['morning', 'night'], instruction: 'After Food' },
+            { id: 'cardnit', name: 'Cardnit 2.6mg', image: 'Cardnit_resized.webp', daysTotal: 7, schedule: ['morning', 'night'], instruction: 'After Food' },
+            { id: 'extor', name: 'Extor 10/160mg', image: 'Extor_resized.png', daysTotal: 30, schedule: ['morning'], instruction: 'After Breakfast' }
+        ];
+
+        // --- State Management ---
+        const STORAGE_KEY = 'roundism_med_tracker_v1';
+        
+        function loadState() {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return initState();
+            return JSON.parse(raw);
+        }
+
+        function initState() {
+            // Initialize start date as TODAY for all meds
+            const today = new Date().toDateString();
+            const state = {
+                lastVisit: today,
+                meds: {}
+            };
+            
+            MEDICINES.forEach(med => {
+                state.meds[med.id] = {
+                    startDate: new Date().getTime(),
+                    completed: false,
+                    dailyChecks: { morning: false, night: false }
+                };
+            });
+            
+            saveState(state);
+            return state;
+        }
+
+        function saveState(state) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        }
+
+        // --- Logic ---
+        let appState = loadState();
+
+        function checkDailyReset() {
+            const today = new Date().toDateString();
+            if (appState.lastVisit !== today) {
+                // It's a new day! Reset checkmarks
+                Object.keys(appState.meds).forEach(key => {
+                    appState.meds[key].dailyChecks = { morning: false, night: false };
+                });
+                appState.lastVisit = today;
+                saveState(appState);
+            }
+        }
+
+        function getDaysRemaining(medId, totalDays) {
+            const startDate = new Date(appState.meds[medId].startDate);
+            const now = new Date();
+            const diffTime = Math.abs(now - startDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+            // diffDays is how many days have passed. 
+            // Remaining = Total - Passed + 1 (including today)
+            let remaining = totalDays - diffDays + 1;
+            
+            if (remaining <= 0) {
+                // Mark as fully complete in state
+                if(!appState.meds[medId].completed) {
+                    appState.meds[medId].completed = true;
+                    saveState(appState);
+                    triggerCompletion(MEDICINES.find(m => m.id === medId).name);
+                }
+                return 0;
+            }
+            return remaining;
+        }
+
+        // --- Rendering ---
+        function render() {
+            checkDailyReset();
+            
+            // Set Date Header
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('date-display').innerText = new Date().toLocaleDateString('en-US', options);
+
+            const morningContainer = document.getElementById('morning-list');
+            const nightContainer = document.getElementById('night-list');
+            morningContainer.innerHTML = '';
+            nightContainer.innerHTML = '';
+
+            let delayCounter = 0;
+
+            MEDICINES.forEach(med => {
+                const remaining = getDaysRemaining(med.id, med.daysTotal);
+                
+                // If course completed, do not render
+                if (remaining <= 0) return;
+
+                med.schedule.forEach(time => {
+                    const isMorning = time === 'morning';
+                    const container = isMorning ? morningContainer : nightContainer;
+                    const isChecked = appState.meds[med.id].dailyChecks[time];
+                    
+                    delayCounter++;
+
+                    const card = document.createElement('div');
+                    card.className = `glass rounded-[2rem] p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-all duration-300 card-enter border border-white/60`;
+                    card.style.animationDelay = `${delayCounter * 0.1}s`;
+
+                    card.innerHTML = `
+                        <div class="w-16 h-16 shrink-0 bg-white rounded-2xl p-2 shadow-inner flex items-center justify-center">
+                            <img src="${med.image}" class="w-full h-full object-contain" alt="${med.name}">
+                        </div>
+                        <div class="flex-grow">
+                            <h3 class="text-lg font-bold text-gray-800 leading-tight">${med.name}</h3>
+                            <p class="text-sm text-gray-500 font-medium">${med.instruction}</p>
+                            <div class="mt-2 flex items-center gap-2">
+                                <span class="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-bold">
+                                    Day ${med.daysTotal - remaining + 1} of ${med.daysTotal}
+                                </span>
+                                <span class="text-xs text-gray-400 font-medium">${remaining} days left</span>
+                            </div>
+                        </div>
+                        <div class="shrink-0 pr-2">
+                            <input type="checkbox" 
+                                class="round-check" 
+                                ${isChecked ? 'checked' : ''} 
+                                onchange="toggleMed('${med.id}', '${time}')">
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            });
+
+            // Initialize Icons
+            lucide.createIcons();
+        }
+
+        // --- Interactions ---
+        window.toggleMed = function(id, time) {
+            const currentVal = appState.meds[id].dailyChecks[time];
+            appState.meds[id].dailyChecks[time] = !currentVal;
+            saveState(appState);
+            
+            // Nice haptic-like scale effect on row
+            // (Handled by CSS transition)
+            
+            // Check if all done for today to throw confetti? 
+            // (Optional nice to have, implemented simple confetti on click)
+            if (!currentVal) {
+                confetti({
+                    particleCount: 30,
+                    spread: 50,
+                    origin: { y: 0.8 },
+                    colors: ['#34d399', '#60a5fa']
+                });
+            }
+        }
+
+        function triggerCompletion(medName) {
+            const modal = document.getElementById('completion-modal');
+            const text = document.getElementById('modal-text');
+            text.innerText = `You have successfully completed the ${30} day course for ${medName}. It has been removed from your daily list.`;
+            modal.classList.remove('hidden');
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+        }
+
+        window.closeModal = function() {
+            document.getElementById('completion-modal').classList.add('hidden');
+            render(); // Re-render to remove the item
+        }
+
+        // Initial Boot
+        render();
+
+    </script>
+</body>
+</html>
