@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roundism MedTracker (Renewed)</title>
+    <title>Roundism MedTracker (Evening Ed.)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -115,18 +115,22 @@
 
         <div id="main-content" class="hidden">
             
-            <div id="sos-container" class="mb-10 space-y-4">
-                <div class="flex items-center gap-2 px-2 mb-2">
-                     <span class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">SOS / Conditional</span>
-                </div>
-                </div>
+            <div id="sos-container" class="mb-10 space-y-4"></div>
 
-            <section id="morning-section" class="mb-12">
+            <section id="morning-section" class="mb-10">
                 <div class="flex items-center gap-3 mb-6 px-2">
                     <div class="p-2 bg-orange-100 rounded-full text-orange-600"><i data-lucide="sun" class="w-6 h-6"></i></div>
                     <h2 class="text-2xl font-bold text-white">Morning Routine</h2>
                 </div>
                 <div class="space-y-4" id="morning-list"></div>
+            </section>
+
+            <section id="evening-section" class="mb-10">
+                <div class="flex items-center gap-3 mb-6 px-2">
+                    <div class="p-2 bg-purple-100 rounded-full text-purple-600"><i data-lucide="sunset" class="w-6 h-6"></i></div>
+                    <h2 class="text-2xl font-bold text-white">Evening Routine</h2>
+                </div>
+                <div class="space-y-4" id="evening-list"></div>
             </section>
 
             <section id="night-section" class="mb-20">
@@ -143,7 +147,7 @@
     <script>
         // --- 1. SETUP MEDICINES ---
         
-        // SOS / Conditional Medicines (Static list, not tracked daily)
+        // SOS / Conditional Medicines
         const SOS_MEDICINES = [
             { 
                 name: 'Angised 0.5mg', 
@@ -161,14 +165,17 @@
             }
         ];
 
-        // Routine Medicines (Tracked in Database)
+        // Routine Medicines
         const MEDICINES = [
             { id: 'zopent', name: 'Zopent 40mg', image: 'zopent_resized.webp', daysTotal: 30, schedule: ['morning'], instruction: 'Before Breakfast', desc: 'Reduces stomach acid.', tags: ['Stomach'] },
-            { id: 'lowplat', name: 'Lowplat Plus 75mg', image: 'Lowplat_resized.png', daysTotal: 30, schedule: ['morning'], instruction: 'After Food', desc: 'Blood thinner/Antiplatelet for heart health.', tags: ['Heart'] },
-            { id: 'cardnit', name: 'Cardnit 6.4mg', image: 'Cardnit_resized.webp', daysTotal: 30, schedule: ['morning', 'night'], instruction: 'After Food', desc: 'Prevents angina (chest pain).', tags: ['Pain'] },
+            { id: 'lowplat', name: 'Lowplat Plus 75mg', image: 'Lowplat_resized.png', daysTotal: 30, schedule: ['morning'], instruction: 'After Food', desc: 'Blood thinner/Antiplatelet.', tags: ['Heart'] },
+            
+            // CARDNIT UPDATED: Morning & Evening
+            { id: 'cardnit', name: 'Cardnit 6.4mg', image: 'Cardnit_resized.webp', daysTotal: 30, schedule: ['morning', 'evening'], instruction: 'After Food', desc: 'Prevents angina (chest pain).', tags: ['Pain'] },
+            
             { id: 'ranola', name: 'Ranola 500mg', image: 'Ranola_resized.png', daysTotal: 30, schedule: ['morning', 'night'], instruction: 'After Food', desc: 'Treats chronic chest pain.', tags: ['Heart'] },
             { id: 'anplag', name: 'Anplag 90mg', image: 'Anplag_resized.webp', daysTotal: 30, schedule: ['morning', 'night'], instruction: 'After Food', desc: 'Prevents blood clots.', tags: ['Heart'] },
-            { id: 'carsel', name: 'Carsel 50mg', image: 'Carsel 50mg_resized.webp', daysTotal: 30, schedule: ['morning', 'night'], instruction: 'After Food', desc: 'Beta-blocker for BP and heart rate.', tags: ['BP'] },
+            { id: 'carsel', name: 'Carsel 50mg', image: 'Carsel 50mg_resized.webp', daysTotal: 30, schedule: ['morning', 'night'], instruction: 'After Food', desc: 'Beta-blocker for BP.', tags: ['BP'] },
             { id: 'dapa', name: 'Dapa-Met XR 10/1000', image: 'DapaMet XR_resized.jpg', daysTotal: 30, schedule: ['morning', 'night'], instruction: 'After Food', desc: 'Diabetes sugar control.', tags: ['Sugar'] },
             { id: 'loprin', name: 'Loprin 75mg', image: 'Loprin_resized.webp', daysTotal: 30, schedule: ['night'], instruction: 'After Food', desc: 'Blood thinner.', tags: ['Heart'] },
             { id: 'rolip', name: 'RolipEze 20/10mg', image: 'RolipEze_resized.webp', daysTotal: 30, schedule: ['night'], instruction: 'After Food', desc: 'Cholesterol management.', tags: ['Heart'] }
@@ -188,48 +195,24 @@
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('date-display').innerText = new Date().toLocaleDateString('en-US', options);
 
-            renderSOS(); // Render static SOS cards immediately
+            renderSOS();
 
             try {
-                // Fetch existing data
+                // Fetch data
                 const { data, error } = await supabaseClient.from('medicine_tracking').select('*');
                 if (error) throw error;
 
-                // Check for missing medicines in DB (New list items)
-                await ensureMedicinesExistInDB(data);
-
-                // Re-fetch after seeding if necessary
-                const { data: refreshedData } = await supabaseClient.from('medicine_tracking').select('*');
-                processDBData(refreshedData);
+                if (!data || data.length === 0) {
+                    console.log("Database empty. Please run SQL command to seed.");
+                    // Fallback visual only if empty
+                } else {
+                    processDBData(data);
+                }
 
             } catch (err) {
                 console.error("DB Error:", err);
                 document.getElementById('sync-status').innerText = "⚠️ Sync Error";
                 document.getElementById('sync-status').className = "px-3 py-1 rounded-full text-xs font-bold bg-red-500 text-white";
-            }
-        }
-
-        async function ensureMedicinesExistInDB(existingData) {
-            const existingIds = new Set(existingData.map(d => d.id));
-            const updates = [];
-            const today = new Date();
-
-            MEDICINES.forEach(med => {
-                if (!existingIds.has(med.id)) {
-                    console.log(`Seeding missing med: ${med.id}`);
-                    updates.push({
-                        id: med.id,
-                        start_date: today.toDateString(),
-                        last_check_date: today.toDateString(),
-                        morning_check: false,
-                        night_check: false
-                    });
-                }
-            });
-
-            if (updates.length > 0) {
-                const { error } = await supabaseClient.from('medicine_tracking').insert(updates);
-                if (error) console.error("Seeding failed", error);
             }
         }
 
@@ -239,6 +222,7 @@
                 if (row.last_check_date !== todayStr) {
                     resetChecksForMed(row.id, todayStr);
                     row.morning_check = false;
+                    row.evening_check = false; // Reset evening
                     row.night_check = false;
                 }
                 dbState[row.id] = row;
@@ -252,27 +236,37 @@
         }
 
         async function toggleMed(id, time) {
-            const isMorning = time === 'morning';
             if (!dbState[id]) return;
 
-            const currentVal = isMorning ? dbState[id].morning_check : dbState[id].night_check;
+            // Determine which field to toggle
+            let currentVal, fieldToUpdate;
+            
+            if (time === 'morning') {
+                currentVal = dbState[id].morning_check;
+                fieldToUpdate = 'morning_check';
+            } else if (time === 'evening') {
+                currentVal = dbState[id].evening_check;
+                fieldToUpdate = 'evening_check';
+            } else {
+                currentVal = dbState[id].night_check;
+                fieldToUpdate = 'night_check';
+            }
+
             const newVal = !currentVal;
 
-            if (isMorning) dbState[id].morning_check = newVal;
-            else dbState[id].night_check = newVal;
-            
+            // Optimistic Update
+            dbState[id][fieldToUpdate] = newVal;
             renderRoutineUI(); 
 
-            const updateObj = isMorning ? { morning_check: newVal } : { night_check: newVal };
-            updateObj.last_check_date = new Date().toDateString(); 
+            // DB Update
+            const updateObj = { [fieldToUpdate]: newVal, last_check_date: new Date().toDateString() };
 
             const { error } = await supabaseClient.from('medicine_tracking').update(updateObj).eq('id', id);
             
             if (error) {
                 console.error("Sync failed", error);
                 // Revert UI on failure
-                if (isMorning) dbState[id].morning_check = !newVal;
-                else dbState[id].night_check = !newVal;
+                dbState[id][fieldToUpdate] = !newVal;
                 renderRoutineUI();
             } else {
                 if(newVal) triggerConfetti();
@@ -283,6 +277,7 @@
             await supabaseClient.from('medicine_tracking').update({
                 last_check_date: todayStr,
                 morning_check: false,
+                evening_check: false,
                 night_check: false
             }).eq('id', id);
         }
@@ -299,7 +294,6 @@
 
         function renderSOS() {
             const container = document.getElementById('sos-container');
-            // Keep header, clear cards
             container.innerHTML = `
                 <div class="flex items-center gap-2 px-2 mb-2">
                      <span class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">SOS / Conditional</span>
@@ -332,23 +326,34 @@
 
         function renderRoutineUI() {
             const morningContainer = document.getElementById('morning-list');
+            const eveningContainer = document.getElementById('evening-list');
             const nightContainer = document.getElementById('night-list');
+            
             morningContainer.innerHTML = '';
+            eveningContainer.innerHTML = '';
             nightContainer.innerHTML = '';
 
             let delay = 0;
 
             MEDICINES.forEach(med => {
-                // Safety check: if DB record doesn't exist yet, skip render until synced
                 if (!dbState[med.id]) return;
 
                 const currentDay = getDayCount(med.id);
                 
                 med.schedule.forEach(time => {
-                    const isMorning = time === 'morning';
-                    const container = isMorning ? morningContainer : nightContainer;
-                    
-                    const isChecked = isMorning ? dbState[med.id].morning_check : dbState[med.id].night_check;
+                    let container;
+                    let isChecked;
+
+                    if (time === 'morning') {
+                        container = morningContainer;
+                        isChecked = dbState[med.id].morning_check;
+                    } else if (time === 'evening') {
+                        container = eveningContainer;
+                        isChecked = dbState[med.id].evening_check;
+                    } else {
+                        container = nightContainer;
+                        isChecked = dbState[med.id].night_check;
+                    }
                     
                     delay++;
 
