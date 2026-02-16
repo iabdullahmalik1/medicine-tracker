@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roundism MedTracker (Synced)</title>
+    <title>Roundism MedTracker (Renewed)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -37,6 +37,11 @@
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: white;
+        }
+        .glass-red {
+            background: rgba(254, 226, 226, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(252, 165, 165, 0.5);
         }
         .round-check {
             appearance: none;
@@ -109,23 +114,12 @@
         </div>
 
         <div id="main-content" class="hidden">
-            <div id="sos-section" class="mb-10 card-enter">
-                <div class="glass border-l-8 border-l-red-500 rounded-3xl p-6 shadow-xl relative overflow-hidden">
-                    <div class="absolute -right-6 -top-6 bg-red-100 w-24 h-24 rounded-full opacity-50 blur-2xl"></div>
-                    <div class="flex items-start gap-4">
-                        <div class="w-20 h-20 shrink-0 rounded-2xl bg-white p-2 shadow-inner flex items-center justify-center">
-                            <img src="Angised_resized.png" alt="Angised" class="w-full h-full object-contain">
-                        </div>
-                        <div>
-                            <div class="flex items-center gap-2 mb-1 flex-wrap">
-                                <h2 class="text-2xl font-bold text-gray-800">Angised 0.5mg</h2>
-                                <span class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">SOS</span>
-                            </div>
-                            <p class="text-gray-600 font-medium text-sm leading-relaxed mb-2">Used for immediate relief of chest pain.</p>
-                        </div>
-                    </div>
+            
+            <div id="sos-container" class="mb-10 space-y-4">
+                <div class="flex items-center gap-2 px-2 mb-2">
+                     <span class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">SOS / Conditional</span>
                 </div>
-            </div>
+                </div>
 
             <section id="morning-section" class="mb-12">
                 <div class="flex items-center gap-3 mb-6 px-2">
@@ -148,16 +142,36 @@
 
     <script>
         // --- 1. SETUP MEDICINES ---
+        
+        // SOS / Conditional Medicines (Static list, not tracked daily)
+        const SOS_MEDICINES = [
+            { 
+                name: 'Angised 0.5mg', 
+                image: 'Angised_resized.png', 
+                desc: 'Used for immediate relief of chest pain.', 
+                tag: 'Pain',
+                trigger: 'In case of Chest Pain'
+            },
+            { 
+                name: 'Lopec 50mg', 
+                image: 'Lopec_resized.png', 
+                desc: 'Taken only if Blood Pressure is extremely high.', 
+                tag: 'BP',
+                trigger: 'Conditional Evening'
+            }
+        ];
+
+        // Routine Medicines (Tracked in Database)
         const MEDICINES = [
-            { id: 'zopent', name: 'Zopent 40mg', image: 'zopent_resized.webp', daysTotal: 30, schedule: ['morning'], instruction: 'Before Breakfast', desc: 'Reduces stomach acid to treat heartburn and acid reflux.', tags: ['Stomach'] },
-            { id: 'anplag', name: 'Anplag 90mg', image: 'Anplag_resized.webp', daysTotal: 30, schedule: ['morning', 'night'], instruction: 'After Food', desc: 'Antiplatelet medicine prevents blood clots to reduce heart attack risk.', tags: ['Heart'] },
-            { id: 'rolip', name: 'RolipEze 20/10mg', image: 'RolipEze_resized.webp', daysTotal: 30, schedule: ['night'], instruction: 'After Dinner', desc: 'Lowers "bad" cholesterol and triglycerides to prevent heart disease.', tags: ['Heart'] },
-            { id: 'loprin', name: 'Loprin 75mg', image: 'Loprin_resized.webp', daysTotal: 30, schedule: ['morning'], instruction: 'After Breakfast', desc: 'Low-dose blood thinner to prevent blood clots and heart issues.', tags: ['Heart'] },
-            { id: 'lasix', name: 'Lasix 40mg', image: 'Lasix 40mg_resized.webp', daysTotal: 10, schedule: ['morning'], instruction: 'After Breakfast', desc: 'Diuretic (water pill) used to treat fluid retention and blood pressure.', tags: ['BP'] },
-            { id: 'dapa', name: 'Dapa-Met XR', image: 'DapaMet XR_resized.jpg', daysTotal: 30, schedule: ['morning', 'night'], instruction: 'After Food', desc: 'Controls blood sugar levels for Type 2 Diabetes management.', tags: ['Sugar'] },
-            { id: 'carsel', name: 'Carsel 25mg', image: 'Carsel 25mg_resized.webp', daysTotal: 30, schedule: ['morning', 'night'], instruction: 'After Food', desc: 'Beta-blocker that lowers blood pressure and slows heart rate.', tags: ['BP'] },
-            { id: 'cardnit', name: 'Cardnit 2.6mg', image: 'Cardnit_resized.webp', daysTotal: 7, schedule: ['morning', 'night'], instruction: 'After Food', desc: 'Prevents chest pain (angina) by relaxing blood vessels.', tags: ['Pain'] },
-            { id: 'extor', name: 'Extor 10/160mg', image: 'Extor_resized.png', daysTotal: 30, schedule: ['morning'], instruction: 'After Breakfast', desc: 'Treats hypertension by relaxing blood vessels for better flow.', tags: ['BP'] }
+            { id: 'zopent', name: 'Zopent 40mg', image: 'zopent_resized.webp', daysTotal: 30, schedule: ['morning'], instruction: 'Before Breakfast', desc: 'Reduces stomach acid.', tags: ['Stomach'] },
+            { id: 'lowplat', name: 'Lowplat Plus 75mg', image: 'Lowplat_resized.png', daysTotal: 30, schedule: ['morning'], instruction: 'After Food', desc: 'Blood thinner/Antiplatelet for heart health.', tags: ['Heart'] },
+            { id: 'cardnit', name: 'Cardnit 6.4mg', image: 'Cardnit_resized.webp', daysTotal: 30, schedule: ['morning', 'night'], instruction: 'After Food', desc: 'Prevents angina (chest pain).', tags: ['Pain'] },
+            { id: 'ranola', name: 'Ranola 500mg', image: 'Ranola_resized.png', daysTotal: 30, schedule: ['morning', 'night'], instruction: 'After Food', desc: 'Treats chronic chest pain.', tags: ['Heart'] },
+            { id: 'anplag', name: 'Anplag 90mg', image: 'Anplag_resized.webp', daysTotal: 30, schedule: ['morning', 'night'], instruction: 'After Food', desc: 'Prevents blood clots.', tags: ['Heart'] },
+            { id: 'carsel', name: 'Carsel 50mg', image: 'Carsel 50mg_resized.webp', daysTotal: 30, schedule: ['morning', 'night'], instruction: 'After Food', desc: 'Beta-blocker for BP and heart rate.', tags: ['BP'] },
+            { id: 'dapa', name: 'Dapa-Met XR 10/1000', image: 'DapaMet XR_resized.jpg', daysTotal: 30, schedule: ['morning', 'night'], instruction: 'After Food', desc: 'Diabetes sugar control.', tags: ['Sugar'] },
+            { id: 'loprin', name: 'Loprin 75mg', image: 'Loprin_resized.webp', daysTotal: 30, schedule: ['night'], instruction: 'After Food', desc: 'Blood thinner.', tags: ['Heart'] },
+            { id: 'rolip', name: 'RolipEze 20/10mg', image: 'RolipEze_resized.webp', daysTotal: 30, schedule: ['night'], instruction: 'After Food', desc: 'Cholesterol management.', tags: ['Heart'] }
         ];
 
         // --- 2. SUPABASE CONFIG ---
@@ -174,15 +188,20 @@
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('date-display').innerText = new Date().toLocaleDateString('en-US', options);
 
+            renderSOS(); // Render static SOS cards immediately
+
             try {
+                // Fetch existing data
                 const { data, error } = await supabaseClient.from('medicine_tracking').select('*');
                 if (error) throw error;
 
-                if (!data || data.length === 0) {
-                    await seedDatabaseFirstTime();
-                } else {
-                    processDBData(data);
-                }
+                // Check for missing medicines in DB (New list items)
+                await ensureMedicinesExistInDB(data);
+
+                // Re-fetch after seeding if necessary
+                const { data: refreshedData } = await supabaseClient.from('medicine_tracking').select('*');
+                processDBData(refreshedData);
+
             } catch (err) {
                 console.error("DB Error:", err);
                 document.getElementById('sync-status').innerText = "⚠️ Sync Error";
@@ -190,32 +209,28 @@
             }
         }
 
-        async function seedDatabaseFirstTime() {
-            const today = new Date();
+        async function ensureMedicinesExistInDB(existingData) {
+            const existingIds = new Set(existingData.map(d => d.id));
             const updates = [];
+            const today = new Date();
 
             MEDICINES.forEach(med => {
-                let startOffset = 1; // Default: Start from Day 2
-                
-                // RULES:
-                if (med.id === 'zopent') startOffset = 0;
-                if (med.id === 'dapa' || med.id === 'cardnit') startOffset = 2; // Seeds as Day 3
-
-                const startDate = new Date();
-                startDate.setDate(today.getDate() - startOffset);
-
-                updates.push({
-                    id: med.id,
-                    start_date: startDate.toDateString(),
-                    last_check_date: today.toDateString(),
-                    morning_check: false,
-                    night_check: false
-                });
+                if (!existingIds.has(med.id)) {
+                    console.log(`Seeding missing med: ${med.id}`);
+                    updates.push({
+                        id: med.id,
+                        start_date: today.toDateString(),
+                        last_check_date: today.toDateString(),
+                        morning_check: false,
+                        night_check: false
+                    });
+                }
             });
 
-            const { error } = await supabaseClient.from('medicine_tracking').insert(updates);
-            if (error) console.error("Seeding failed", error);
-            else location.reload(); 
+            if (updates.length > 0) {
+                const { error } = await supabaseClient.from('medicine_tracking').insert(updates);
+                if (error) console.error("Seeding failed", error);
+            }
         }
 
         function processDBData(rows) {
@@ -228,7 +243,7 @@
                 }
                 dbState[row.id] = row;
             });
-            renderUI();
+            renderRoutineUI();
             
             document.getElementById('loading-screen').classList.add('hidden');
             document.getElementById('main-content').classList.remove('hidden');
@@ -238,13 +253,15 @@
 
         async function toggleMed(id, time) {
             const isMorning = time === 'morning';
+            if (!dbState[id]) return;
+
             const currentVal = isMorning ? dbState[id].morning_check : dbState[id].night_check;
             const newVal = !currentVal;
 
             if (isMorning) dbState[id].morning_check = newVal;
             else dbState[id].night_check = newVal;
             
-            renderUI(); 
+            renderRoutineUI(); 
 
             const updateObj = isMorning ? { morning_check: newVal } : { night_check: newVal };
             updateObj.last_check_date = new Date().toDateString(); 
@@ -253,9 +270,10 @@
             
             if (error) {
                 console.error("Sync failed", error);
+                // Revert UI on failure
                 if (isMorning) dbState[id].morning_check = !newVal;
                 else dbState[id].night_check = !newVal;
-                renderUI();
+                renderRoutineUI();
             } else {
                 if(newVal) triggerConfetti();
             }
@@ -278,7 +296,41 @@
         }
 
         // --- 4. RENDER UI ---
-        function renderUI() {
+
+        function renderSOS() {
+            const container = document.getElementById('sos-container');
+            // Keep header, clear cards
+            container.innerHTML = `
+                <div class="flex items-center gap-2 px-2 mb-2">
+                     <span class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">SOS / Conditional</span>
+                </div>
+            `;
+
+            SOS_MEDICINES.forEach((med, index) => {
+                const div = document.createElement('div');
+                div.className = "glass-red border-l-8 border-l-red-500 rounded-3xl p-6 shadow-xl relative overflow-hidden card-enter mb-4";
+                div.style.animationDelay = `${index * 0.1}s`;
+                div.innerHTML = `
+                    <div class="absolute -right-6 -top-6 bg-red-200 w-24 h-24 rounded-full opacity-50 blur-2xl"></div>
+                    <div class="flex items-start gap-4">
+                        <div class="w-16 h-16 shrink-0 rounded-2xl bg-white p-2 shadow-inner flex items-center justify-center">
+                            <img src="${med.image}" alt="${med.name}" class="w-full h-full object-contain" onerror="this.src='https://via.placeholder.com/64?text=Meds'">
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                <h2 class="text-xl font-bold text-gray-800">${med.name}</h2>
+                                <span class="tag-${med.tag} px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide">${med.tag}</span>
+                            </div>
+                            <p class="text-gray-700 font-bold text-xs uppercase mb-1 text-red-700">⚠️ ${med.trigger}</p>
+                            <p class="text-gray-600 font-medium text-sm leading-relaxed">${med.desc}</p>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderRoutineUI() {
             const morningContainer = document.getElementById('morning-list');
             const nightContainer = document.getElementById('night-list');
             morningContainer.innerHTML = '';
@@ -287,23 +339,18 @@
             let delay = 0;
 
             MEDICINES.forEach(med => {
-                const currentDay = getDayCount(med.id);
-                if (currentDay > med.daysTotal) return; 
+                // Safety check: if DB record doesn't exist yet, skip render until synced
+                if (!dbState[med.id]) return;
 
+                const currentDay = getDayCount(med.id);
+                
                 med.schedule.forEach(time => {
                     const isMorning = time === 'morning';
                     const container = isMorning ? morningContainer : nightContainer;
                     
-                    const isChecked = isMorning ? dbState[med.id]?.morning_check : dbState[med.id]?.night_check;
+                    const isChecked = isMorning ? dbState[med.id].morning_check : dbState[med.id].night_check;
                     
                     delay++;
-
-                    // --- SPECIAL LOGIC FOR CARDNIT & DAPA ---
-                    // Morning = Day 2, Night = Day 3 (If currentDay is 3)
-                    let displayDay = currentDay;
-                    if ((med.id === 'cardnit' || med.id === 'dapa') && isMorning) {
-                        displayDay = Math.max(1, currentDay - 1); 
-                    }
 
                     // Tags
                     const tagsHtml = med.tags.map(tag => 
@@ -316,7 +363,7 @@
 
                     card.innerHTML = `
                         <div class="w-16 h-16 shrink-0 bg-white rounded-2xl p-2 shadow-inner flex items-center justify-center mt-1">
-                            <img src="${med.image}" class="w-full h-full object-contain" alt="${med.name}">
+                            <img src="${med.image}" class="w-full h-full object-contain" alt="${med.name}" onerror="this.src='https://via.placeholder.com/64?text=Meds'">
                         </div>
                         <div class="flex-grow">
                             <div class="flex flex-wrap items-center mb-1">
@@ -329,7 +376,7 @@
                             </p>
                             <div class="flex items-center gap-2">
                                 <span class="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-bold">
-                                    Day ${displayDay}/${med.daysTotal}
+                                    Day ${currentDay}
                                 </span>
                             </div>
                         </div>
@@ -353,4 +400,3 @@
     </script>
 </body>
 </html>
-
