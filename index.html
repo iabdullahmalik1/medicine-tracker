@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roundism MedTracker (Evening Ed.)</title>
+    <title>Roundism MedTracker (Renewed)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -80,6 +80,7 @@
         .tag-Stomach { background-color: #ffedd5; color: #9a3412; border: 1px solid #fdba74; }
         .tag-Pain { background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
         .tag-Heart { background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+        .tag-Cholesterol { background-color: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
         
         /* Spinner */
         .spinner {
@@ -125,14 +126,6 @@
                 <div class="space-y-4" id="morning-list"></div>
             </section>
 
-            <section id="evening-section" class="mb-10">
-                <div class="flex items-center gap-3 mb-6 px-2">
-                    <div class="p-2 bg-purple-100 rounded-full text-purple-600"><i data-lucide="sunset" class="w-6 h-6"></i></div>
-                    <h2 class="text-2xl font-bold text-white">Evening Routine</h2>
-                </div>
-                <div class="space-y-4" id="evening-list"></div>
-            </section>
-
             <section id="night-section" class="mb-20">
                 <div class="flex items-center gap-3 mb-6 px-2">
                     <div class="p-2 bg-indigo-100 rounded-full text-indigo-600"><i data-lucide="moon" class="w-6 h-6"></i></div>
@@ -167,15 +160,14 @@
 
         // Routine Medicines
         const MEDICINES = [
-            { id: 'zopent', name: 'Zopent 40mg', image: 'zopent_resized.webp', daysTotal: 30, schedule: ['morning'], instruction: 'Before Breakfast', desc: 'Reduces stomach acid.', tags: ['Stomach'] },
-            { id: 'lowplat', name: 'Lowplat Plus 75mg', image: 'lowplat_plus.webp', daysTotal: 30, schedule: ['morning'], instruction: 'After Food', desc: 'Blood thinner/Antiplatelet.', tags: ['Heart'] },
-            
-            // CARDNIT UPDATED: Morning & Evening
-            { id: 'cardnit', name: 'Cardnit 6.4mg', image: 'Cardnit_resized.webp', daysTotal: 30, schedule: ['morning', 'evening'], instruction: 'After Food', desc: 'Prevents angina (chest pain).', tags: ['Pain'] },
-            
-            { id: 'ranola', name: 'Ranola 500mg', image: 'ranola_500mg.webp', daysTotal: 30, schedule: ['morning', 'night'], instruction: 'After Food', desc: 'Treats chronic chest pain.', tags: ['Heart'] },
-            { id: 'anplag', name: 'Anplag 90mg', image: 'Anplag_resized.webp', daysTotal: 30, schedule: ['morning', 'night'], instruction: 'After Food', desc: 'Prevents blood clots.', tags: ['Heart'] },
-            { id: 'carsel', name: 'Carsel 50mg', image: 'carsel_50.webp', daysTotal: 30, schedule: ['morning', 'night'], instruction: 'After Food', desc: 'Beta-blocker for BP.', tags: ['BP'] },
+            // --- NEW ADDITIONS ---
+            { id: 'carveda', name: 'Carveda 6.25mg', image: 'carveda_resized.png', daysTotal: 30, schedule: ['morning', 'night'], instruction: 'After Food', desc: 'Beta-blocker for heart & BP.', tags: ['BP', 'Heart'] },
+            { id: 'triphage', name: 'Triphage XR 25/5/1000', image: 'Triphage_resized.png', daysTotal: 30, schedule: ['morning'], instruction: 'After Food', desc: 'Combined sugar control.', tags: ['Sugar'] },
+            { id: 'apiban', name: 'Apiban 5mg', image: 'apiban_resized.png', daysTotal: 30, schedule: ['morning', 'night'], instruction: 'After Food', desc: 'Prevents blood clots.', tags: ['Heart'] },
+            { id: 'xplened', name: 'Xplended 20mg', image: 'xplended_resized.png', daysTotal: 30, schedule: ['night'], instruction: 'After Food', desc: 'Cholesterol management.', tags: ['Cholesterol'] },
+
+            // --- EXISTING (KEPT) ---
+            { id: 'carsel', name: 'Carsel 50mg', image: 'Carsel 50mg_resized.webp', daysTotal: 30, schedule: ['morning', 'night'], instruction: 'After Food', desc: 'Beta-blocker for BP.', tags: ['BP'] },
             { id: 'dapa', name: 'Dapa-Met XR 10/1000', image: 'DapaMet XR_resized.jpg', daysTotal: 30, schedule: ['morning', 'night'], instruction: 'After Food', desc: 'Diabetes sugar control.', tags: ['Sugar'] },
             { id: 'loprin', name: 'Loprin 75mg', image: 'Loprin_resized.webp', daysTotal: 30, schedule: ['night'], instruction: 'After Food', desc: 'Blood thinner.', tags: ['Heart'] },
             { id: 'rolip', name: 'RolipEze 20/10mg', image: 'RolipEze_resized.webp', daysTotal: 30, schedule: ['night'], instruction: 'After Food', desc: 'Cholesterol management.', tags: ['Heart'] }
@@ -204,7 +196,7 @@
 
                 if (!data || data.length === 0) {
                     console.log("Database empty. Please run SQL command to seed.");
-                    // Fallback visual only if empty
+                    await seedMissingData(); // Auto-seed if empty
                 } else {
                     processDBData(data);
                 }
@@ -216,13 +208,26 @@
             }
         }
 
+        async function seedMissingData() {
+            const updates = MEDICINES.map(med => ({
+                id: med.id,
+                start_date: new Date().toDateString(),
+                last_check_date: new Date().toDateString(),
+                morning_check: false,
+                night_check: false
+            }));
+            
+            const { error } = await supabaseClient.from('medicine_tracking').upsert(updates, { onConflict: 'id' });
+            if (!error) location.reload();
+        }
+
         function processDBData(rows) {
             const todayStr = new Date().toDateString();
             rows.forEach(row => {
                 if (row.last_check_date !== todayStr) {
                     resetChecksForMed(row.id, todayStr);
                     row.morning_check = false;
-                    row.evening_check = false; // Reset evening
+                    row.evening_check = false; 
                     row.night_check = false;
                 }
                 dbState[row.id] = row;
@@ -244,9 +249,6 @@
             if (time === 'morning') {
                 currentVal = dbState[id].morning_check;
                 fieldToUpdate = 'morning_check';
-            } else if (time === 'evening') {
-                currentVal = dbState[id].evening_check;
-                fieldToUpdate = 'evening_check';
             } else {
                 currentVal = dbState[id].night_check;
                 fieldToUpdate = 'night_check';
@@ -326,11 +328,9 @@
 
         function renderRoutineUI() {
             const morningContainer = document.getElementById('morning-list');
-            const eveningContainer = document.getElementById('evening-list');
             const nightContainer = document.getElementById('night-list');
             
             morningContainer.innerHTML = '';
-            eveningContainer.innerHTML = '';
             nightContainer.innerHTML = '';
 
             let delay = 0;
@@ -347,12 +347,11 @@
                     if (time === 'morning') {
                         container = morningContainer;
                         isChecked = dbState[med.id].morning_check;
-                    } else if (time === 'evening') {
-                        container = eveningContainer;
-                        isChecked = dbState[med.id].evening_check;
-                    } else {
+                    } else if (time === 'night') {
                         container = nightContainer;
                         isChecked = dbState[med.id].night_check;
+                    } else {
+                        return; // Skip if invalid time for now
                     }
                     
                     delay++;
@@ -405,5 +404,3 @@
     </script>
 </body>
 </html>
-
-
