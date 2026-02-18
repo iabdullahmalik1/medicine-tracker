@@ -140,24 +140,24 @@
     <script>
         // --- 1. SETUP MEDICINES ---
         
-        // SOS / Conditional Medicines
+// SOS / Conditional Medicines
         const SOS_MEDICINES = [
             { 
-                name: 'Angised 0.5mg', 
-                image: 'Angised_resized.png', 
-                desc: 'Used for immediate relief of chest pain.', 
-                tag: 'Pain',
+                name: 'Disprin (Soluble)', 
+                image: 'disprin.png', // Make sure to add this image to your assets
+                desc: 'STEP 1: Dissolve 2 tablets in water immediately.', 
+                tag: 'Emergency',
                 trigger: 'In case of Chest Pain'
             },
             { 
-                name: 'Lopec 50mg', 
-                image: 'Lopec_resized.png', 
-                desc: 'Taken only if Blood Pressure is extremely high.', 
-                tag: 'BP',
-                trigger: 'Conditional Evening'
+                name: 'Angised 0.5mg', 
+                image: 'Angised_resized.png', 
+                desc: 'STEP 2: Keep under tongue if pain persists after Disprin.', 
+                tag: 'Emergency',
+                trigger: 'If pain persists'
             }
         ];
-
+        
         // Routine Medicines
         const MEDICINES = [
             // --- NEW ADDITIONS ---
@@ -404,3 +404,4 @@
     </script>
 </body>
 </html>
+
